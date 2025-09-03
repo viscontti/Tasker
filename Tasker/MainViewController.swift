@@ -8,13 +8,15 @@
 import Foundation
 import UIKit
 
-protocol UITableDelegate{
-    func cellInTableTapped()
+protocol SwitchTableViewCellDelegate {
+    func switchDidChangeValue(value: Bool, forIndexPath: IndexPath)
 }
 
-class UiSwitchTable: UITableViewCell {
+class SwitchTableViewCell: UITableViewCell {
     
+    var delegate: SwitchTableViewCellDelegate?
     let uiSwitch = UISwitch()
+    var thisCellIndexPath: IndexPath?
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?){
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -24,7 +26,9 @@ class UiSwitchTable: UITableViewCell {
     }
     
     @objc private func switchDidChangeValue() {
-        
+        if let unwrappedIndexPath = thisCellIndexPath {
+            delegate?.switchDidChangeValue(value: uiSwitch.isOn, forIndexPath: unwrappedIndexPath)
+        }
     }
     
     required init?(coder: NSCoder) {
@@ -32,20 +36,24 @@ class UiSwitchTable: UITableViewCell {
     }
 }
 
-class MainViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class MainViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, SwitchTableViewCellDelegate {
     
     var tasks: [String] = []
     var tableView: UITableView!
-    var delegate: UITableDelegate?
+    
+    func switchDidChangeValue(value: Bool, forIndexPath: IndexPath) {
+        print("value: \(value), indexPath: \(forIndexPath)")
+    }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return 20
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "TaskCellSwitch", for: indexPath) as! UiSwitchTable
-        //cell.uiSwitch.isOn = cacheArray[indexPath.row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: "TaskCellSwitch", for: indexPath) as! SwitchTableViewCell
         cell.textLabel?.text = String("\(indexPath)")
+        cell.thisCellIndexPath = indexPath
+        cell.delegate = self
         return cell
     }
     
@@ -65,7 +73,7 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         tableView.delegate = self
         
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "TaskCell")
-        tableView.register(UiSwitchTable.self, forCellReuseIdentifier: "TaskCellSwitch")
+        tableView.register(SwitchTableViewCell.self, forCellReuseIdentifier: "TaskCellSwitch")
         view.addSubview(tableView)
     }
     
