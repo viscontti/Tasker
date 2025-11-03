@@ -38,7 +38,7 @@ class SwitchTableViewCell: UITableViewCell {
 
 class MainViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, SwitchTableViewCellDelegate {
     
-    var tasks: [String] = []
+    var tasks: [(text: String, IsOn: Bool)] = []
     var tableView: UITableView!
     
     func switchDidChangeValue(value: Bool, forIndexPath: IndexPath) {
@@ -46,12 +46,12 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 20
+        return tasks.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TaskCellSwitch", for: indexPath) as! SwitchTableViewCell
-        cell.textLabel?.text = String("\(indexPath)")
+        cell.textLabel?.text = tasks[indexPath.row].text
         cell.thisCellIndexPath = indexPath
         cell.delegate = self
         return cell
@@ -62,12 +62,12 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         view.backgroundColor = .systemMint
         setupAndShowTableView()
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .add, target: self, action: #selector(setupAndShowTableView)
+            barButtonSystemItem: .add, target: self, action: #selector(showInitialAlert)
         )
         
     }
     
-    @objc func setupAndShowTableView() {
+    func setupAndShowTableView() {
         tableView = UITableView(frame: view.bounds, style: .insetGrouped)
         tableView.dataSource = self
         tableView.delegate = self
@@ -77,7 +77,7 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         view.addSubview(tableView)
     }
     
-    func showInitialAlert() {
+    @objc func showInitialAlert() {
         let alertController = UIAlertController(
             title: "Tasker",
             message: "Write your first task",
@@ -92,6 +92,8 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         let okAction = UIAlertAction(title: "OK", style: .default) { _ in
             if let taskText = alertController.textFields?.first?.text {
                 print("User entered task: \(taskText)")
+                self.tasks.append((text: taskText, IsOn: true))
+                self.tableView.reloadData()
             }
         }
         
