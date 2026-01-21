@@ -43,11 +43,27 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
     
     func switchDidChangeValue(value: Bool, forIndexPath: IndexPath) {
         print("value: \(value), indexPath: \(forIndexPath)")
+        tasks[forIndexPath.row].IsOn = value
+        //saveTasks()
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return tasks.count
     }
+    
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+            return true
+        }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+           if editingStyle == .delete {
+               tasks.remove(at: indexPath.row)
+               tableView.deleteRows(at: [indexPath], with: .fade)
+           }
+       }
+    func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
+           return "Delete"
+       }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TaskCellSwitch", for: indexPath) as! SwitchTableViewCell
@@ -62,7 +78,7 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         view.backgroundColor = .systemMint
         setupAndShowTableView()
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .add, target: self, action: #selector(showInitialAlert)
+            barButtonSystemItem: .add, target: self, action: #selector(showInitialAlert2)
         )
         
     }
@@ -77,10 +93,10 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         view.addSubview(tableView)
     }
     
-    @objc func showInitialAlert() {
+    @objc func showInitialAlert2() {
         let alertController = UIAlertController(
             title: "Tasker",
-            message: "Write your first task",
+            message: "Write your task",
             preferredStyle: .alert
         )
         
@@ -90,10 +106,12 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         }
         
         let okAction = UIAlertAction(title: "OK", style: .default) { _ in
-            if let taskText = alertController.textFields?.first?.text {
+            if let taskText = alertController.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines), !taskText.isEmpty{
                 print("User entered task: \(taskText)")
                 self.tasks.append((text: taskText, IsOn: true))
                 self.tableView.reloadData()
+            } else {
+                self.showInitialAlert(withError: true)
             }
         }
         
@@ -101,6 +119,17 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         
         alertController.addAction(okAction)
         alertController.addAction(cancelAction)
+        
+        self.present(alertController, animated: true, completion: nil)
+    }
+    private func showInitialAlert(withError: Bool) {
+        let alertController = UIAlertController(
+            title: "Tasker",
+            message: "⚠️Empty field⚠️",
+            preferredStyle: .alert
+        )
+        let okAction = UIAlertAction(title: "OK", style: .default)
+        alertController.addAction(okAction)
         
         self.present(alertController, animated: true, completion: nil)
     }
