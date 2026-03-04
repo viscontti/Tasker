@@ -78,13 +78,76 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         }
     }
     
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-           if editingStyle == .delete {
-               tasks.remove(at: indexPath.row)
+//    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+//           if editingStyle == .delete {
+//               tasks.remove(at: indexPath.row)
+//               tableView.deleteRows(at: [indexPath], with: .fade)
+//               saveTasks()
+//           }
+//       }
+   
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+           
+           // Кнопка Delete
+           let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (action, view, completionHandler) in
+               guard let self = self else { return }
+               self.tasks.remove(at: indexPath.row)
                tableView.deleteRows(at: [indexPath], with: .fade)
-               saveTasks()
+               self.saveTasks()
+               completionHandler(true)
            }
+           deleteAction.backgroundColor = .systemRed
+           
+           // Кнопка Edit
+           let editAction = UIContextualAction(style: .normal, title: "Edit") { [weak self] (action, view, completionHandler) in
+               guard let self = self else { return }
+               self.showEditAlert(for: indexPath)
+               completionHandler(true)
+           }
+           editAction.backgroundColor = .systemTeal
+           
+           let configuration = UISwipeActionsConfiguration(actions: [deleteAction, editAction])
+           configuration.performsFirstActionWithFullSwipe = false // Отключаем полный свайп для удаления
+           return configuration
        }
+    
+    private func showEditAlert(for indexPath: IndexPath) {
+        let task = tasks[indexPath.row]
+        
+        let alertController = UIAlertController(
+            title: "Edit Task",
+            message: "Change your task text",
+            preferredStyle: .alert
+        )
+        
+        alertController.addTextField { textField in
+            textField.text = task.text // Показываем текущий текст задачи
+            textField.placeholder = "Enter your task"
+            textField.keyboardType = .default
+        }
+        
+        let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self] _ in
+            guard let self = self else { return }
+            if let newText = alertController.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines), !newText.isEmpty {
+                // Обновляем текст задачи, сохраняя состояние свитча
+                self.tasks[indexPath.row].text = newText
+                self.tableView.reloadRows(at: [indexPath], with: .fade)
+                self.saveTasks()
+                print("✏️ Task updated: \(newText)")
+            } else {
+                self.showEmptyFieldAlert()
+            }
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+         
+         alertController.addAction(saveAction)
+         alertController.addAction(cancelAction)
+         
+         present(alertController, animated: true)
+    }
+    
+    
+    
     
     func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
            return "Delete"
@@ -209,7 +272,7 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
                 self.tableView.reloadData()
                 self.saveTasks()
             } else {
-                self.showInitialAlert(withError: true)
+                self.showEmptyFieldAlert()
             }
         }
         
@@ -220,7 +283,7 @@ class MainViewController: UIViewController, UITableViewDataSource, UITableViewDe
         
         self.present(alertController, animated: true, completion: nil)
     }
-    private func showInitialAlert(withError: Bool) {
+    private func showEmptyFieldAlert() {
         let alertController = UIAlertController(
             title: "Tasker",
             message: "⚠️Empty field⚠️",
